@@ -1,0 +1,380 @@
+// SceneLink App Logic
+
+// State Management
+let currentEventIndex = 0;
+let eventStack = [...MOCK_EVENTS];
+let userLikes = [];
+let userDislikes = [];
+
+// DOM Elements
+const eventCardsContainer = document.getElementById('eventCards');
+const likeBtn = document.getElementById('likeBtn');
+const dislikeBtn = document.getElementById('dislikeBtn');
+const infoBtn = document.getElementById('infoBtn');
+const noMoreCards = document.getElementById('noMoreCards');
+const matchesList = document.getElementById('matchesList');
+const upcomingEvents = document.getElementById('upcomingEvents');
+const matchNotification = document.getElementById('matchNotification');
+const eventModal = document.getElementById('eventModal');
+const modalClose = document.getElementById('modalClose');
+
+// Navigation
+const navItems = document.querySelectorAll('.nav-item');
+const views = document.querySelectorAll('.view');
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const targetView = item.dataset.view;
+
+    // Update active nav item
+    navItems.forEach(nav => nav.classList.remove('active'));
+    item.classList.add('active');
+
+    // Update active view
+    views.forEach(view => view.classList.remove('active'));
+    document.getElementById(targetView).classList.add('active');
+
+    // Load view-specific content
+    if (targetView === 'matchesView') {
+      loadMatches();
+    } else if (targetView === 'profileView') {
+      loadProfile();
+    }
+  });
+});
+
+// Tabs in Matches View
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    loadMatches(tab.dataset.tab);
+  });
+});
+
+// Initialize App
+function init() {
+  renderEventCards();
+  loadMatches();
+  loadProfile();
+
+  // Button listeners
+  likeBtn.addEventListener('click', () => handleSwipe('like'));
+  dislikeBtn.addEventListener('click', () => handleSwipe('dislike'));
+  infoBtn.addEventListener('click', () => showEventDetail(eventStack[currentEventIndex]));
+
+  // Match notification listeners
+  document.getElementById('keepSwipingBtn').addEventListener('click', () => {
+    matchNotification.classList.add('hidden');
+  });
+
+  document.getElementById('sendMessageBtn').addEventListener('click', () => {
+    matchNotification.classList.add('hidden');
+    // Switch to matches view
+    document.querySelector('[data-view="matchesView"]').click();
+  });
+
+  // Modal close
+  modalClose.addEventListener('click', () => {
+    eventModal.classList.add('hidden');
+  });
+
+  eventModal.addEventListener('click', (e) => {
+    if (e.target === eventModal) {
+      eventModal.classList.add('hidden');
+    }
+  });
+}
+
+// Render Event Cards
+function renderEventCards() {
+  eventCardsContainer.innerHTML = '';
+
+  if (currentEventIndex >= eventStack.length) {
+    noMoreCards.classList.remove('hidden');
+    return;
+  }
+
+  // Render current and next 2 cards for stack effect
+  for (let i = currentEventIndex; i < Math.min(currentEventIndex + 3, eventStack.length); i++) {
+    const card = createEventCard(eventStack[i], i - currentEventIndex);
+    eventCardsContainer.appendChild(card);
+  }
+
+  // Add swipe listeners to top card
+  const topCard = eventCardsContainer.querySelector('.event-card');
+  if (topCard) {
+    addSwipeListeners(topCard);
+  }
+}
+
+// Create Event Card Element
+function createEventCard(event, stackIndex) {
+  const card = document.createElement('div');
+  card.className = 'event-card';
+  card.style.zIndex = 100 - stackIndex;
+  card.style.transform = `scale(${1 - stackIndex * 0.05}) translateY(${stackIndex * 10}px)`;
+
+  card.innerHTML = `
+    <div style="position: relative;">
+      <img src="${event.image}" alt="${event.title}" class="event-image">
+      <div class="event-badge">${event.type}</div>
+      <div class="swipe-indicator like">INTERESSIERT</div>
+      <div class="swipe-indicator dislike">NOPE</div>
+    </div>
+    <div class="event-info">
+      <div>
+        <h2 class="event-title">${event.title}</h2>
+        <div class="event-details">
+          <div class="event-detail-item">
+            📅 ${formatDate(event.date)} • ${event.time} Uhr
+          </div>
+          <div class="event-detail-item">
+            📍 ${event.location} • ${event.distance}
+          </div>
+          <div class="event-detail-item">
+            💰 ${event.price}
+          </div>
+        </div>
+        <div class="event-tags">
+          ${event.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+        </div>
+      </div>
+      <div class="attendees-count">
+        👥 ${event.attendees} interessiert
+      </div>
+    </div>
+  `;
+
+  card.dataset.eventId = event.id;
+  return card;
+}
+
+// Add Swipe Listeners
+function addSwipeListeners(card) {
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+
+  const likeIndicator = card.querySelector('.swipe-indicator.like');
+  const dislikeIndicator = card.querySelector('.swipe-indicator.dislike');
+
+  card.addEventListener('mousedown', dragStart);
+  card.addEventListener('touchstart', dragStart);
+
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('touchmove', drag);
+
+  document.addEventListener('mouseup', dragEnd);
+  document.addEventListener('touchend', dragEnd);
+
+  function dragStart(e) {
+    isDragging = true;
+    startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+    card.style.transition = 'none';
+  }
+
+  function drag(e) {
+    if (!isDragging) return;
+
+    currentX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+    const deltaX = currentX - startX;
+    const rotation = deltaX * 0.1;
+
+    card.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+
+    // Show indicators
+    if (deltaX > 0) {
+      likeIndicator.style.opacity = Math.min(deltaX / 100, 1);
+      dislikeIndicator.style.opacity = 0;
+    } else {
+      dislikeIndicator.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
+      likeIndicator.style.opacity = 0;
+    }
+  }
+
+  function dragEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+
+    const deltaX = currentX - startX;
+    const threshold = 100;
+
+    if (Math.abs(deltaX) > threshold) {
+      // Swipe detected
+      handleSwipe(deltaX > 0 ? 'like' : 'dislike');
+    } else {
+      // Reset card
+      card.style.transition = 'transform 0.3s ease';
+      card.style.transform = 'translateX(0) rotate(0)';
+      likeIndicator.style.opacity = 0;
+      dislikeIndicator.style.opacity = 0;
+    }
+  }
+}
+
+// Handle Swipe Action
+function handleSwipe(action) {
+  const currentEvent = eventStack[currentEventIndex];
+  const card = eventCardsContainer.querySelector('.event-card');
+
+  if (!card) return;
+
+  // Add to user preferences
+  if (action === 'like') {
+    userLikes.push(currentEvent.id);
+    card.classList.add('removing', 'like');
+
+    // Random chance of match (30%)
+    if (Math.random() < 0.3) {
+      setTimeout(() => showMatchNotification(currentEvent), 500);
+    }
+  } else {
+    userDislikes.push(currentEvent.id);
+    card.classList.add('removing', 'dislike');
+  }
+
+  // Move to next card
+  setTimeout(() => {
+    currentEventIndex++;
+    renderEventCards();
+  }, 500);
+}
+
+// Show Match Notification
+function showMatchNotification(event) {
+  const randomUser = MOCK_USERS[Math.floor(Math.random() * MOCK_USERS.length)];
+
+  document.getElementById('matchName').textContent = randomUser.name;
+  document.getElementById('matchAvatar1').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user';
+  document.getElementById('matchAvatar2').src = randomUser.avatar;
+
+  matchNotification.classList.remove('hidden');
+
+  // Add to matches
+  MOCK_MATCHES.unshift({
+    id: Date.now(),
+    user: randomUser,
+    event: event,
+    matchDate: new Date().toISOString(),
+    isNew: true,
+    lastMessage: 'Neues Match! Sag Hallo 👋',
+    messageTime: 'Jetzt'
+  });
+}
+
+// Show Event Detail Modal
+function showEventDetail(event) {
+  const detail = document.getElementById('eventDetail');
+  detail.innerHTML = `
+    <img src="${event.image}" alt="${event.title}" class="event-detail-image">
+    <h2 class="event-detail-title">${event.title}</h2>
+    <div class="event-detail-info">
+      <div class="event-detail-item">
+        <strong>Typ:</strong> ${event.type}
+      </div>
+      <div class="event-detail-item">
+        <strong>Datum:</strong> ${formatDate(event.date)} um ${event.time} Uhr
+      </div>
+      <div class="event-detail-item">
+        <strong>Location:</strong> ${event.location}, ${event.city}
+      </div>
+      <div class="event-detail-item">
+        <strong>Entfernung:</strong> ${event.distance}
+      </div>
+      <div class="event-detail-item">
+        <strong>Preis:</strong> ${event.price}
+      </div>
+      <div class="event-detail-item">
+        <strong>Interessierte:</strong> ${event.attendees} Personen
+      </div>
+    </div>
+    <p class="event-detail-description">${event.description}</p>
+    <div class="event-tags">
+      ${event.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+    </div>
+  `;
+
+  eventModal.classList.remove('hidden');
+}
+
+// Load Matches
+function loadMatches(filter = 'all') {
+  matchesList.innerHTML = '';
+
+  let filteredMatches = MOCK_MATCHES;
+
+  if (filter === 'new') {
+    filteredMatches = MOCK_MATCHES.filter(m => m.isNew);
+  } else if (filter === 'upcoming') {
+    const today = new Date();
+    filteredMatches = MOCK_MATCHES.filter(m => new Date(m.event.date) > today);
+  }
+
+  filteredMatches.forEach(match => {
+    const matchCard = document.createElement('div');
+    matchCard.className = 'match-card' + (match.isNew ? ' new' : '');
+
+    matchCard.innerHTML = `
+      <img src="${match.user.avatar}" alt="${match.user.name}" class="match-avatar">
+      <div class="match-info">
+        <div class="match-name">${match.user.name}, ${match.user.age}</div>
+        <div class="match-event">📍 ${match.event.title}</div>
+        <div class="match-message">${match.lastMessage}</div>
+      </div>
+      <div class="match-time">${match.messageTime}</div>
+    `;
+
+    matchCard.addEventListener('click', () => {
+      // In real app, would open chat
+      alert(`Chat mit ${match.user.name} öffnen (Feature für vollständige App)`);
+    });
+
+    matchesList.appendChild(matchCard);
+  });
+
+  if (filteredMatches.length === 0) {
+    matchesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">Keine Matches gefunden</p>';
+  }
+}
+
+// Load Profile
+function loadProfile() {
+  const likedEventsList = MOCK_EVENTS.filter(e => LIKED_EVENTS.includes(e.id));
+
+  upcomingEvents.innerHTML = '';
+
+  if (likedEventsList.length === 0) {
+    upcomingEvents.innerHTML = '<p style="color: var(--text-secondary);">Keine kommenden Events</p>';
+    return;
+  }
+
+  likedEventsList.forEach(event => {
+    const item = document.createElement('div');
+    item.className = 'upcoming-event-item';
+    item.innerHTML = `
+      <div>
+        <div class="upcoming-event-name">${event.title}</div>
+        <div class="upcoming-event-date">${formatDate(event.date)} • ${event.time} Uhr</div>
+      </div>
+      <div style="color: var(--accent);">→</div>
+    `;
+
+    item.addEventListener('click', () => showEventDetail(event));
+    upcomingEvents.appendChild(item);
+  });
+}
+
+// Utility Functions
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+  return date.toLocaleDateString('de-DE', options);
+}
+
+// Initialize app when DOM is loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
