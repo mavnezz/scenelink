@@ -1,4 +1,4 @@
-// SceneLink App Logic - Extended Version
+// SceneLink App Logic - Extended Version with Groups
 
 // State Management
 let currentEventIndex = 0;
@@ -13,6 +13,8 @@ let activeFilters = {
   free: false
 };
 let currentChat = null;
+let currentGroup = null;
+let userGroups = [...MOCK_GROUPS.slice(0, 3)]; // User starts with 3 groups for demo
 
 // Initialize App
 function init() {
@@ -36,6 +38,7 @@ function showOnboarding() {
   document.getElementById('onboardingFlow').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
   renderInterestsGrid();
+  setupPrefButtons();
 }
 
 function showMainApp() {
@@ -46,6 +49,29 @@ function showMainApp() {
 
 function nextOnboardingStep() {
   document.getElementById('onboardingWelcome').classList.remove('active');
+  document.getElementById('onboardingProfile').classList.add('active');
+}
+
+function saveProfileAndContinue() {
+  const name = document.getElementById('profileNameInput').value.trim();
+  const age = parseInt(document.getElementById('profileAgeInput').value);
+  const bio = document.getElementById('profileBioInput').value.trim();
+
+  if (!name) {
+    alert('Please enter your name');
+    return;
+  }
+  if (!age || age < 18 || age > 99) {
+    alert('Please enter a valid age (18-99)');
+    return;
+  }
+
+  CURRENT_USER.name = name;
+  CURRENT_USER.age = age;
+  CURRENT_USER.bio = bio || 'Event enthusiast';
+  CURRENT_USER.avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+
+  document.getElementById('onboardingProfile').classList.remove('active');
   document.getElementById('onboardingNewcomer').classList.add('active');
 }
 
@@ -57,24 +83,25 @@ function setNewcomer(isNewcomer) {
 
 function renderInterestsGrid() {
   const grid = document.getElementById('interestsGrid');
+  if (!grid) return;
   grid.innerHTML = AVAILABLE_INTERESTS.map(interest => `
-    <button class="interest-btn" onclick="toggleInterest('${interest.id}')">
+    <button class="interest-btn" onclick="toggleInterest('${interest.id}', this)">
       <span class="interest-btn-icon">${interest.icon}</span>
       <span class="interest-btn-name">${interest.name}</span>
     </button>
   `).join('');
 }
 
-function toggleInterest(interestId) {
+function toggleInterest(interestId, btnElement) {
   const index = CURRENT_USER.interests.indexOf(interestId);
-  const btn = event.target.closest('.interest-btn');
+  const btn = btnElement || document.querySelector(`[onclick*="${interestId}"]`);
 
   if (index > -1) {
     CURRENT_USER.interests.splice(index, 1);
-    btn.classList.remove('selected');
+    if (btn) btn.classList.remove('selected');
   } else {
     CURRENT_USER.interests.push(interestId);
-    btn.classList.add('selected');
+    if (btn) btn.classList.add('selected');
   }
 
   updateInterestCounter();
@@ -82,11 +109,60 @@ function toggleInterest(interestId) {
 
 function updateInterestCounter() {
   const count = CURRENT_USER.interests.length;
-  document.getElementById('selectedCount').textContent = count;
-  document.getElementById('continueInterests').disabled = count < 3;
+  const countEl = document.getElementById('selectedCount');
+  const continueBtn = document.getElementById('continueInterests');
+  if (countEl) countEl.textContent = count;
+  if (continueBtn) continueBtn.disabled = count < 3;
+}
+
+function goToMatchPreferences() {
+  document.getElementById('onboardingInterests').classList.remove('active');
+  document.getElementById('onboardingMatchPrefs').classList.add('active');
+}
+
+function skipInterests() {
+  CURRENT_USER.interests = ['musik', 'kunst', 'food']; // Default interests
+  goToMatchPreferences();
+}
+
+function setupPrefButtons() {
+  // Setup preference button click handlers
+  const prefContainers = ['peopleTypeOptions', 'vibeOptions', 'groupSizeOptions'];
+
+  prefContainers.forEach(containerId => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.querySelectorAll('.pref-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remove selected from siblings
+        container.querySelectorAll('.pref-btn').forEach(b => b.classList.remove('selected'));
+        // Add selected to clicked
+        btn.classList.add('selected');
+      });
+    });
+  });
+}
+
+function saveMatchPreferences() {
+  const ageMin = parseInt(document.getElementById('prefAgeMin').value) || 18;
+  const ageMax = parseInt(document.getElementById('prefAgeMax').value) || 35;
+
+  const peopleType = document.querySelector('#peopleTypeOptions .pref-btn.selected')?.dataset.value || 'open';
+  const vibe = document.querySelector('#vibeOptions .pref-btn.selected')?.dataset.value || 'chill';
+  const groupSize = document.querySelector('#groupSizeOptions .pref-btn.selected')?.dataset.value || 'medium';
+
+  CURRENT_USER.matchPreferences = {
+    ageMin: Math.min(ageMin, ageMax),
+    ageMax: Math.max(ageMin, ageMax),
+    peopleType,
+    vibe,
+    groupSize
+  };
 }
 
 function completeOnboarding() {
+  saveMatchPreferences();
   CURRENT_USER.hasCompletedOnboarding = true;
   localStorage.setItem('onboarding_completed', 'true');
   localStorage.setItem('current_user', JSON.stringify(CURRENT_USER));
@@ -94,6 +170,7 @@ function completeOnboarding() {
 }
 
 function skipOnboarding() {
+  CURRENT_USER.name = 'Guest';
   CURRENT_USER.interests = ['musik', 'kunst', 'food']; // Default interests
   completeOnboarding();
 }
@@ -119,7 +196,7 @@ function initMainApp() {
 
   renderCategoryPills();
   renderEventCards();
-  loadMatches();
+  loadGroups();
   loadProfile();
 
   // Button listeners
@@ -143,20 +220,22 @@ function initMainApp() {
     });
   }
 
-  // Match notification listeners
+  // Group notification listeners
   const keepSwipingBtn = document.getElementById('keepSwipingBtn');
-  const sendMessageBtn = document.getElementById('sendMessageBtn');
+  const openGroupChatBtn = document.getElementById('openGroupChatBtn');
 
   if (keepSwipingBtn) {
     keepSwipingBtn.addEventListener('click', () => {
-      document.getElementById('matchNotification').classList.add('hidden');
+      document.getElementById('groupNotification').classList.add('hidden');
     });
   }
 
-  if (sendMessageBtn) {
-    sendMessageBtn.addEventListener('click', () => {
-      document.getElementById('matchNotification').classList.add('hidden');
-      openChat(MOCK_MATCHES[0]);
+  if (openGroupChatBtn) {
+    openGroupChatBtn.addEventListener('click', () => {
+      document.getElementById('groupNotification').classList.add('hidden');
+      if (userGroups.length > 0) {
+        openGroupChat(userGroups[0]);
+      }
     });
   }
 
@@ -181,12 +260,12 @@ function initMainApp() {
   // Navigation
   setupNavigation();
 
-  // Tabs in Matches View
+  // Tabs in Groups View
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      loadMatches(tab.dataset.tab);
+      loadGroups(tab.dataset.tab);
     });
   });
 
@@ -221,7 +300,7 @@ function setupNavigation() {
       }
 
       if (targetView === 'matchesView') {
-        loadMatches();
+        loadGroups();
       } else if (targetView === 'profileView') {
         loadProfile();
       } else if (targetView === 'mapView') {
@@ -466,10 +545,10 @@ function handleSwipe(action) {
     userLikes.push(currentEvent.id);
     card.classList.add('removing', 'like');
 
-    // Check for interest match and random chance (40%)
+    // Check for interest match and random chance (50%) to join a group
     const hasCommonInterests = currentEvent.interests.some(i => CURRENT_USER.interests.includes(i));
-    if (hasCommonInterests && Math.random() < 0.4) {
-      setTimeout(() => showMatchNotification(currentEvent), 500);
+    if (hasCommonInterests && Math.random() < 0.5) {
+      setTimeout(() => showGroupNotification(currentEvent), 500);
     }
   } else {
     userDislikes.push(currentEvent.id);
@@ -482,38 +561,76 @@ function handleSwipe(action) {
   }, 500);
 }
 
-// Show Match Notification
-function showMatchNotification(event) {
-  const matchedUser = MOCK_USERS.find(u =>
-    u.interests.some(i => event.interests.includes(i))
-  ) || MOCK_USERS[0];
+// Show Group Notification - User joins a group for this event
+function showGroupNotification(event) {
+  // Find existing group for this event or create new one
+  let group = MOCK_GROUPS.find(g => g.event.id === event.id);
 
-  const commonInterests = matchedUser.interests.filter(i => CURRENT_USER.interests.includes(i));
+  if (!group) {
+    // Create a new group with random members
+    const shuffledUsers = [...MOCK_USERS].sort(() => Math.random() - 0.5);
+    const groupSize = Math.floor(Math.random() * 4) + 4; // 4-7 members
+    const members = shuffledUsers.slice(0, groupSize);
 
-  document.getElementById('matchName').textContent = matchedUser.name;
-  document.getElementById('matchAvatar1').src = CURRENT_USER.avatar;
-  document.getElementById('matchAvatar2').src = matchedUser.avatar;
+    group = {
+      id: Date.now(),
+      name: generateGroupName(event),
+      event: event,
+      members: members,
+      createdAt: new Date().toISOString(),
+      isNew: true,
+      commonInterests: event.interests,
+      messages: [
+        { userId: members[0].id, text: `Excited for ${event.title}!`, time: 'Just now' }
+      ]
+    };
+    MOCK_GROUPS.unshift(group);
+  }
 
-  const commonInterestsHtml = commonInterests.map(id => {
+  // Add to user's groups
+  if (!userGroups.find(g => g.id === group.id)) {
+    group.isNew = true;
+    userGroups.unshift(group);
+  }
+
+  // Show notification
+  const avatarsHtml = group.members.slice(0, 5).map(m =>
+    `<img src="${m.avatar}" alt="${m.name}">`
+  ).join('');
+
+  document.getElementById('groupAvatarsPreview').innerHTML = avatarsHtml;
+  document.getElementById('groupNamePreview').textContent = group.name;
+  document.getElementById('groupMembersPreview').textContent = group.members.length;
+  document.getElementById('groupEventPreview').textContent = event.title;
+
+  const commonInterestsHtml = group.commonInterests.map(id => {
     const interest = AVAILABLE_INTERESTS.find(i => i.id === id);
     return interest ? `<span class="common-interest-tag">${interest.icon} ${interest.name}</span>` : '';
   }).join('');
 
-  document.getElementById('commonInterestsMatch').innerHTML = commonInterestsHtml;
-  document.getElementById('matchNotification').classList.remove('hidden');
+  document.getElementById('commonInterestsGroup').innerHTML = commonInterestsHtml;
+  document.getElementById('groupNotification').classList.remove('hidden');
+}
 
-  // Add to matches
-  const newMatch = {
-    id: Date.now(),
-    user: matchedUser,
-    event: event,
-    matchDate: new Date().toISOString(),
-    isNew: true,
-    lastMessage: 'New match! Say hello 👋',
-    messageTime: 'Now',
-    commonInterests: commonInterests
+// Generate a fun group name based on event
+function generateGroupName(event) {
+  const prefixes = ['The', 'Team', 'Squad', 'Crew', 'Gang'];
+  const suffixes = {
+    'konzert': ['Music Lovers', 'Sound Seekers', 'Melody Makers'],
+    'kunst': ['Art Explorers', 'Creative Minds', 'Culture Club'],
+    'sport': ['Active Squad', 'Fitness Crew', 'Movement Gang'],
+    'food': ['Foodies United', 'Taste Hunters', 'Flavor Squad'],
+    'party': ['Party People', 'Night Owls', 'Vibe Tribe'],
+    'workshop': ['Learners Club', 'Skill Builders', 'Workshop Warriors'],
+    'outdoor': ['Nature Lovers', 'Adventure Crew', 'Outdoor Gang'],
+    'community': ['Community Crew', 'Social Squad', 'Together Team']
   };
-  MOCK_MATCHES.unshift(newMatch);
+
+  const categoryOptions = suffixes[event.category] || ['Event Crew', 'Fun Group', 'Adventure Squad'];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const suffix = categoryOptions[Math.floor(Math.random() * categoryOptions.length)];
+
+  return `${prefix} ${suffix}`;
 }
 
 // Show Event Detail Modal
@@ -557,63 +674,110 @@ function showEventDetail(event) {
   document.getElementById('eventModal').classList.remove('hidden');
 }
 
-// Load Matches
-function loadMatches(filter = 'all') {
-  const matchesList = document.getElementById('matchesList');
-  matchesList.innerHTML = '';
+// Load Groups
+function loadGroups(filter = 'all') {
+  const groupsList = document.getElementById('groupsList');
+  if (!groupsList) return;
 
-  let filteredMatches = MOCK_MATCHES;
+  groupsList.innerHTML = '';
+
+  let filteredGroups = userGroups;
 
   if (filter === 'new') {
-    filteredMatches = MOCK_MATCHES.filter(m => m.isNew);
+    filteredGroups = userGroups.filter(g => g.isNew);
   } else if (filter === 'upcoming') {
     const today = new Date();
-    filteredMatches = MOCK_MATCHES.filter(m => new Date(m.event.date) > today);
+    filteredGroups = userGroups.filter(g => new Date(g.event.date) > today);
   }
 
   // Update tab counts
-  document.querySelectorAll('.tab-count')[0].textContent = MOCK_MATCHES.length;
-  document.querySelectorAll('.tab-count')[1].textContent = MOCK_MATCHES.filter(m => m.isNew).length;
-  document.querySelectorAll('.tab-count')[2].textContent = MOCK_MATCHES.filter(m => new Date(m.event.date) > new Date()).length;
+  const tabCounts = document.querySelectorAll('.tab-count');
+  if (tabCounts[0]) tabCounts[0].textContent = userGroups.length;
+  if (tabCounts[1]) tabCounts[1].textContent = userGroups.filter(g => g.isNew).length;
+  if (tabCounts[2]) tabCounts[2].textContent = userGroups.filter(g => new Date(g.event.date) > new Date()).length;
 
-  filteredMatches.forEach(match => {
-    const matchCard = document.createElement('div');
-    matchCard.className = 'match-card' + (match.isNew ? ' new' : '');
+  filteredGroups.forEach(group => {
+    const groupCard = document.createElement('div');
+    groupCard.className = 'group-card' + (group.isNew ? ' new' : '');
 
-    matchCard.innerHTML = `
-      <img src="${match.user.avatar}" alt="${match.user.name}" class="match-avatar">
-      <div class="match-info">
-        <div class="match-name">${match.user.name}, ${match.user.age}</div>
-        <div class="match-event">📍 ${match.event.title}</div>
-        <div class="match-message">${match.lastMessage}</div>
+    // Generate avatar stack HTML
+    const avatarsHtml = group.members.slice(0, 3).map(m =>
+      `<img src="${m.avatar}" alt="${m.name}">`
+    ).join('');
+
+    const moreCount = group.members.length > 3 ? group.members.length - 3 : 0;
+    const moreHtml = moreCount > 0 ? `<span class="more-members">+${moreCount}</span>` : '';
+
+    // Get last message
+    const lastMsg = group.messages[group.messages.length - 1];
+    const lastMsgUser = MOCK_USERS.find(u => u.id === lastMsg?.userId);
+
+    groupCard.innerHTML = `
+      <div class="group-header">
+        <div class="group-avatars">
+          ${avatarsHtml}
+          ${moreHtml}
+        </div>
+        <div class="group-info">
+          <div class="group-name">${group.name}</div>
+          <div class="group-event">📍 ${group.event.title}</div>
+          <div class="group-members-count">👥 ${group.members.length} members</div>
+        </div>
       </div>
-      <div class="match-time">${match.messageTime}</div>
+      ${lastMsg ? `
+        <div class="group-last-message">
+          <div class="group-message-preview">
+            <span class="group-message-author">${lastMsgUser?.name || 'Someone'}:</span>
+            <span>${lastMsg.text}</span>
+          </div>
+          <div class="group-message-time">${lastMsg.time}</div>
+        </div>
+      ` : ''}
     `;
 
-    matchCard.addEventListener('click', () => openChat(match));
-    matchesList.appendChild(matchCard);
+    groupCard.addEventListener('click', () => openGroupChat(group));
+    groupsList.appendChild(groupCard);
   });
 
-  if (filteredMatches.length === 0) {
-    matchesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">Keine Matches gefunden</p>';
+  if (filteredGroups.length === 0) {
+    groupsList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No groups yet. Swipe right on events to join groups!</p>';
   }
 }
 
-// Chat Functions
-function openChat(match) {
-  currentChat = match;
-  document.getElementById('chatAvatar').src = match.user.avatar;
-  document.getElementById('chatName').textContent = match.user.name;
-  document.getElementById('chatEvent').textContent = match.event.title;
+// Group Chat Functions
+function openGroupChat(group) {
+  currentGroup = group;
+  group.isNew = false; // Mark as seen
 
-  // Load chat messages (demo)
+  // Update chat header
+  const avatarsHtml = group.members.slice(0, 3).map(m =>
+    `<img src="${m.avatar}" alt="${m.name}">`
+  ).join('');
+
+  document.getElementById('chatGroupAvatars').innerHTML = avatarsHtml;
+  document.getElementById('chatGroupName').textContent = group.name;
+  document.getElementById('chatGroupEvent').textContent = group.event.title;
+  document.getElementById('chatGroupMembers').textContent = `${group.members.length} members`;
+
+  // Load chat messages
   const messagesContainer = document.getElementById('chatMessages');
-  messagesContainer.innerHTML = `
-    <div class="chat-message received">
-      <div>${match.lastMessage}</div>
-      <div class="chat-time">${match.messageTime}</div>
-    </div>
-  `;
+  messagesContainer.innerHTML = '';
+
+  group.messages.forEach(msg => {
+    const sender = MOCK_USERS.find(u => u.id === msg.userId);
+    const isCurrentUser = msg.userId === CURRENT_USER.id;
+
+    const messageEl = document.createElement('div');
+    messageEl.className = `chat-message ${isCurrentUser ? 'sent' : 'received'}`;
+    messageEl.innerHTML = `
+      ${!isCurrentUser ? `<div class="chat-sender">${sender?.name || 'Unknown'}</div>` : ''}
+      <div>${msg.text}</div>
+      <div class="chat-time">${msg.time}</div>
+    `;
+    messagesContainer.appendChild(messageEl);
+  });
+
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
   // Switch to chat view
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -623,26 +787,113 @@ function openChat(match) {
 function closeChat() {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('matchesView').classList.add('active');
+  loadGroups(); // Refresh groups to update "new" badges
 }
 
 function sendMessage() {
   const input = document.getElementById('chatInput');
   const message = input.value.trim();
 
-  if (!message) return;
+  if (!message || !currentGroup) return;
 
+  // Add message to group
+  const newMsg = {
+    userId: CURRENT_USER.id,
+    text: message,
+    time: 'Just now'
+  };
+  currentGroup.messages.push(newMsg);
+
+  // Add to UI
   const messagesContainer = document.getElementById('chatMessages');
   const messageEl = document.createElement('div');
   messageEl.className = 'chat-message sent';
   messageEl.innerHTML = `
     <div>${message}</div>
-    <div class="chat-time">Jetzt</div>
+    <div class="chat-time">Just now</div>
   `;
 
   messagesContainer.appendChild(messageEl);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
   input.value = '';
+
+  // Simulate a reply after 2 seconds (for demo)
+  setTimeout(() => {
+    simulateGroupReply();
+  }, 2000);
+}
+
+function simulateGroupReply() {
+  if (!currentGroup) return;
+
+  const randomMember = currentGroup.members[Math.floor(Math.random() * currentGroup.members.length)];
+  const replies = [
+    "Sounds great! 🎉",
+    "Can't wait!",
+    "See you there!",
+    "Awesome! 👍",
+    "Perfect, I'm in!",
+    "Let's do this!"
+  ];
+  const randomReply = replies[Math.floor(Math.random() * replies.length)];
+
+  const newMsg = {
+    userId: randomMember.id,
+    text: randomReply,
+    time: 'Just now'
+  };
+  currentGroup.messages.push(newMsg);
+
+  const messagesContainer = document.getElementById('chatMessages');
+  const messageEl = document.createElement('div');
+  messageEl.className = 'chat-message received';
+  messageEl.innerHTML = `
+    <div class="chat-sender">${randomMember.name}</div>
+    <div>${randomReply}</div>
+    <div class="chat-time">Just now</div>
+  `;
+
+  messagesContainer.appendChild(messageEl);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Group Info Modal
+function showGroupInfo() {
+  if (!currentGroup) return;
+
+  document.getElementById('groupInfoName').textContent = currentGroup.name;
+  document.getElementById('groupInfoEvent').innerHTML = `
+    📍 ${currentGroup.event.title}<br>
+    📅 ${formatDate(currentGroup.event.date)} • ${currentGroup.event.time}<br>
+    📍 ${currentGroup.event.location}
+  `;
+  document.getElementById('groupMemberCount').textContent = currentGroup.members.length;
+
+  // Render members list
+  const membersList = document.getElementById('groupMembersList');
+  membersList.innerHTML = currentGroup.members.map(member => `
+    <div class="member-item">
+      <img src="${member.avatar}" alt="${member.name}" class="member-avatar">
+      <div class="member-info">
+        <div class="member-name">${member.name}, ${member.age}</div>
+        <div class="member-bio">${member.bio}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Render common interests
+  const commonInterestsHtml = currentGroup.commonInterests.map(id => {
+    const interest = AVAILABLE_INTERESTS.find(i => i.id === id);
+    return interest ? `<span class="common-interest-tag">${interest.icon} ${interest.name}</span>` : '';
+  }).join('');
+  document.getElementById('groupCommonInterests').innerHTML = commonInterestsHtml;
+
+  document.getElementById('groupInfoModal').classList.remove('hidden');
+}
+
+function closeGroupInfo() {
+  document.getElementById('groupInfoModal').classList.add('hidden');
 }
 
 // Map View
@@ -710,7 +961,7 @@ function loadProfile() {
 
   // Update stats
   if (statEvents) statEvents.textContent = userLikes.length;
-  if (statMatches) statMatches.textContent = MOCK_MATCHES.length;
+  if (statMatches) statMatches.textContent = userGroups.length; // Now shows groups instead of matches
   if (statInterests) statInterests.textContent = CURRENT_USER.interests.length;
 
   console.log('Profile loaded successfully');

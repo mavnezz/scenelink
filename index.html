@@ -15,6 +15,7 @@
     <div id="app">
         <!-- Onboarding Flow -->
         <div id="onboardingFlow" class="onboarding-flow hidden">
+            <!-- Step 1: Welcome -->
             <div id="onboardingWelcome" class="onboarding-screen active">
                 <div class="onboarding-content">
                     <h1 class="onboarding-logo">SceneLink</h1>
@@ -23,6 +24,31 @@
                     <button class="btn-primary" onclick="nextOnboardingStep()">Let's Go!</button>
                 </div>
             </div>
+
+            <!-- Step 2: Profile Info (Name, Age, Bio) -->
+            <div id="onboardingProfile" class="onboarding-screen">
+                <div class="onboarding-content">
+                    <h2>Tell us about yourself</h2>
+                    <p class="onboarding-text">Create your profile</p>
+                    <div class="onboarding-form">
+                        <div class="form-group">
+                            <label for="profileNameInput">Name</label>
+                            <input type="text" id="profileNameInput" placeholder="Your name" class="onboarding-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="profileAgeInput">Age</label>
+                            <input type="number" id="profileAgeInput" placeholder="Your age" min="18" max="99" class="onboarding-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="profileBioInput">Bio</label>
+                            <textarea id="profileBioInput" placeholder="Tell us something about yourself..." class="onboarding-input onboarding-textarea" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="saveProfileAndContinue()">Continue</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Newcomer Question -->
             <div id="onboardingNewcomer" class="onboarding-screen">
                 <div class="onboarding-content">
                     <h2>Welcome to Bonn!</h2>
@@ -39,15 +65,96 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Step 4: Interests -->
             <div id="onboardingInterests" class="onboarding-screen">
                 <div class="onboarding-content">
                     <h2>What are you interested in?</h2>
                     <p class="onboarding-text">Select at least 3 interests</p>
                     <div id="interestsGrid" class="interests-grid"></div>
-                    <button class="btn-primary" id="continueInterests" onclick="completeOnboarding()" disabled>
+                    <button class="btn-primary" id="continueInterests" onclick="goToMatchPreferences()" disabled>
                         Continue (<span id="selectedCount">0</span>/3)
                     </button>
-                    <button class="btn-link" onclick="skipOnboarding()">Skip</button>
+                    <button class="btn-link" onclick="skipInterests()">Skip</button>
+                </div>
+            </div>
+
+            <!-- Step 5: Match Preferences -->
+            <div id="onboardingMatchPrefs" class="onboarding-screen">
+                <div class="onboarding-content">
+                    <h2>Who do you want to meet?</h2>
+                    <p class="onboarding-text">Help us find the right groups for you</p>
+
+                    <div class="pref-section">
+                        <h3>Age range</h3>
+                        <div class="age-range-container">
+                            <div class="age-input-group">
+                                <label>From</label>
+                                <input type="number" id="prefAgeMin" value="18" min="18" max="99" class="age-input">
+                            </div>
+                            <span class="age-separator">-</span>
+                            <div class="age-input-group">
+                                <label>To</label>
+                                <input type="number" id="prefAgeMax" value="35" min="18" max="99" class="age-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pref-section">
+                        <h3>What kind of people do you want to meet?</h3>
+                        <div class="pref-options" id="peopleTypeOptions">
+                            <button class="pref-btn selected" data-value="open">
+                                <span class="pref-icon">🌍</span>
+                                <span>Open to everyone</span>
+                            </button>
+                            <button class="pref-btn" data-value="newcomers">
+                                <span class="pref-icon">✈️</span>
+                                <span>Other newcomers</span>
+                            </button>
+                            <button class="pref-btn" data-value="locals">
+                                <span class="pref-icon">🏠</span>
+                                <span>Locals who know the city</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pref-section">
+                        <h3>What's your vibe?</h3>
+                        <div class="pref-options" id="vibeOptions">
+                            <button class="pref-btn selected" data-value="chill">
+                                <span class="pref-icon">😌</span>
+                                <span>Chill & relaxed</span>
+                            </button>
+                            <button class="pref-btn" data-value="active">
+                                <span class="pref-icon">⚡</span>
+                                <span>Active & energetic</span>
+                            </button>
+                            <button class="pref-btn" data-value="party">
+                                <span class="pref-icon">🎉</span>
+                                <span>Party & nightlife</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pref-section">
+                        <h3>Preferred group size</h3>
+                        <div class="pref-options" id="groupSizeOptions">
+                            <button class="pref-btn" data-value="small">
+                                <span class="pref-icon">👥</span>
+                                <span>Small (3-5)</span>
+                            </button>
+                            <button class="pref-btn selected" data-value="medium">
+                                <span class="pref-icon">👨‍👩‍👧‍👦</span>
+                                <span>Medium (5-8)</span>
+                            </button>
+                            <button class="pref-btn" data-value="large">
+                                <span class="pref-icon">🎭</span>
+                                <span>Large (8-10)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" onclick="completeOnboarding()">Find my groups!</button>
                 </div>
             </div>
         </div>
@@ -112,30 +219,51 @@
                 </div>
 
                 <div id="matchesView" class="view">
-                    <h2 class="view-title">Your Matches</h2>
+                    <h2 class="view-title">Your Groups</h2>
                     <div class="tabs">
                         <button class="tab active" data-tab="all">All <span class="tab-count">0</span></button>
                         <button class="tab" data-tab="new">New <span class="tab-count">0</span></button>
                         <button class="tab" data-tab="upcoming">Soon <span class="tab-count">0</span></button>
                     </div>
-                    <div id="matchesList" class="matches-list"></div>
+                    <div id="groupsList" class="groups-list"></div>
                 </div>
 
                 <div id="chatView" class="view">
                     <div class="chat-header">
                         <button class="back-btn" onclick="closeChat()">←</button>
-                        <div class="chat-user-info">
-                            <img id="chatAvatar" src="" alt="" class="chat-avatar">
+                        <div class="chat-group-info">
+                            <div class="chat-group-avatars" id="chatGroupAvatars"></div>
                             <div>
-                                <div id="chatName" class="chat-name"></div>
-                                <div id="chatEvent" class="chat-event"></div>
+                                <div id="chatGroupName" class="chat-name"></div>
+                                <div id="chatGroupEvent" class="chat-event"></div>
+                                <div id="chatGroupMembers" class="chat-members-count"></div>
                             </div>
                         </div>
+                        <button class="group-info-btn" onclick="showGroupInfo()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
                     </div>
                     <div id="chatMessages" class="chat-messages"></div>
                     <div class="chat-input-container">
-                        <input type="text" id="chatInput" placeholder="Write a message..." class="chat-input">
+                        <input type="text" id="chatInput" placeholder="Write to the group..." class="chat-input">
                         <button class="chat-send-btn" onclick="sendMessage()">→</button>
+                    </div>
+                </div>
+
+                <!-- Group Info Modal -->
+                <div id="groupInfoModal" class="modal hidden">
+                    <div class="modal-content">
+                        <button class="modal-close" onclick="closeGroupInfo()">&times;</button>
+                        <h2 id="groupInfoName">Group Name</h2>
+                        <div id="groupInfoEvent" class="group-info-event"></div>
+                        <h3>Members (<span id="groupMemberCount">0</span>)</h3>
+                        <div id="groupMembersList" class="group-members-list"></div>
+                        <h3>Common Interests</h3>
+                        <div id="groupCommonInterests" class="common-interests"></div>
                     </div>
                 </div>
 
@@ -166,7 +294,7 @@
                             </div>
                             <div class="stat-item">
                                 <div class="stat-number" id="statMatches">0</div>
-                                <div class="stat-label">Matches</div>
+                                <div class="stat-label">Groups</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-number" id="statInterests">0</div>
@@ -207,17 +335,18 @@
                     </div>
                 </div>
 
-                <div id="matchNotification" class="match-notification hidden">
+                <div id="groupNotification" class="match-notification hidden">
                     <div class="match-content">
-                        <div class="match-icon">✨</div>
-                        <h2>It's a Match!</h2>
-                        <div class="match-profiles">
-                            <img class="match-avatar" id="matchAvatar1" src="" alt="">
-                            <img class="match-avatar" id="matchAvatar2" src="" alt="">
+                        <div class="match-icon">🎉</div>
+                        <h2>You joined a group!</h2>
+                        <div class="group-preview">
+                            <div class="group-avatars-row" id="groupAvatarsPreview"></div>
+                            <p class="group-name-preview" id="groupNamePreview"></p>
                         </div>
-                        <p class="match-text">You and <span id="matchName"></span> are both interested!</p>
-                        <div id="commonInterestsMatch" class="common-interests"></div>
-                        <button class="btn-primary" id="sendMessageBtn">Send Message</button>
+                        <p class="match-text"><span id="groupMembersPreview"></span> people are going to</p>
+                        <p class="group-event-preview" id="groupEventPreview"></p>
+                        <div id="commonInterestsGroup" class="common-interests"></div>
+                        <button class="btn-primary" id="openGroupChatBtn">Open Group Chat</button>
                         <button class="btn-secondary" id="keepSwipingBtn">Keep Swiping</button>
                     </div>
                 </div>
@@ -252,9 +381,12 @@
                 </button>
                 <button class="nav-item" data-view="matchesView">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <span>Matches</span>
+                    <span>Groups</span>
                 </button>
                 <button class="nav-item" data-view="profileView">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

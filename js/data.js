@@ -480,11 +480,107 @@ const LIKED_EVENTS = [1, 3, 4, 6, 9, 12];
 // Current user profile (would normally come from authentication)
 let CURRENT_USER = {
   id: 999,
-  name: "Max Mustermann",
+  name: "",
   age: 24,
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=user",
-  bio: "Event-Liebhaber | Musik & Kunst | Neue Leute kennenlernen",
+  bio: "",
   interests: [], // Will be set during onboarding
   isNewcomer: false,
-  hasCompletedOnboarding: false
+  hasCompletedOnboarding: false,
+  matchPreferences: {
+    ageMin: 18,
+    ageMax: 35,
+    peopleType: 'open', // 'open', 'newcomers', 'locals'
+    vibe: 'chill', // 'chill', 'active', 'party'
+    groupSize: 'medium' // 'small' (3-5), 'medium' (5-8), 'large' (8-10)
+  }
 };
+
+// Mock Groups Data - Groups of people going to the same events
+const MOCK_GROUPS = [
+  {
+    id: 1,
+    name: "Jazz Lovers",
+    event: MOCK_EVENTS[0], // Summer Jazz Night
+    members: [MOCK_USERS[0], MOCK_USERS[3], MOCK_USERS[5], MOCK_USERS[6]],
+    createdAt: "2024-06-10",
+    isNew: true,
+    commonInterests: ["musik", "konzerte"],
+    messages: [
+      { userId: 1, text: "Hey everyone! Excited for the jazz night?", time: "2 hours ago" },
+      { userId: 4, text: "Can't wait! Anyone been to Blue Note before?", time: "1 hour ago" },
+      { userId: 6, text: "Yes! The vibe is amazing there", time: "30 min ago" }
+    ]
+  },
+  {
+    id: 2,
+    name: "Yoga Crew",
+    event: MOCK_EVENTS[2], // Rooftop Yoga Session
+    members: [MOCK_USERS[1], MOCK_USERS[4], MOCK_USERS[7]],
+    createdAt: "2024-06-09",
+    isNew: true,
+    commonInterests: ["yoga", "sport", "outdoor"],
+    messages: [
+      { userId: 2, text: "Who's bringing their own mat?", time: "5 hours ago" },
+      { userId: 5, text: "I will! The sunrise is going to be beautiful", time: "4 hours ago" }
+    ]
+  },
+  {
+    id: 3,
+    name: "Techno Squad",
+    event: MOCK_EVENTS[6], // Techno Open Air
+    members: [MOCK_USERS[2], MOCK_USERS[0], MOCK_USERS[5], MOCK_USERS[1], MOCK_USERS[3]],
+    createdAt: "2024-06-08",
+    isNew: false,
+    commonInterests: ["party", "techno", "musik"],
+    messages: [
+      { userId: 3, text: "The lineup is insane!", time: "Yesterday" },
+      { userId: 1, text: "Should we meet at the entrance?", time: "Yesterday" },
+      { userId: 6, text: "Let's do 4pm at the main gate!", time: "Yesterday" }
+    ]
+  },
+  {
+    id: 4,
+    name: "Foodies United",
+    event: MOCK_EVENTS[3], // Food Market Festival
+    members: [MOCK_USERS[7], MOCK_USERS[0], MOCK_USERS[4], MOCK_USERS[2], MOCK_USERS[6], MOCK_USERS[3]],
+    createdAt: "2024-06-07",
+    isNew: false,
+    commonInterests: ["food"],
+    messages: [
+      { userId: 8, text: "I heard the Asian stalls are amazing", time: "2 days ago" },
+      { userId: 1, text: "Can't wait to try everything!", time: "2 days ago" }
+    ]
+  },
+  {
+    id: 5,
+    name: "Art Explorers",
+    event: MOCK_EVENTS[1], // Street Art Workshop
+    members: [MOCK_USERS[6], MOCK_USERS[0], MOCK_USERS[3]],
+    createdAt: "2024-06-06",
+    isNew: false,
+    commonInterests: ["kunst", "workshops"],
+    messages: [
+      { userId: 7, text: "Anyone have experience with graffiti?", time: "3 days ago" },
+      { userId: 4, text: "First time for me, excited to learn!", time: "3 days ago" }
+    ]
+  },
+  {
+    id: 6,
+    name: "Newcomers Meetup Group",
+    event: MOCK_EVENTS[11], // Newcomers Welcome Meetup
+    members: [MOCK_USERS[0], MOCK_USERS[3], MOCK_USERS[6], MOCK_USERS[1], MOCK_USERS[4]],
+    createdAt: "2024-06-05",
+    isNew: false,
+    commonInterests: ["networking"],
+    messages: [
+      { userId: 1, text: "Perfect event to meet new people!", time: "4 days ago" },
+      { userId: 4, text: "I'm new from Düsseldorf, where is everyone from?", time: "4 days ago" },
+      { userId: 7, text: "Cologne here! Looking forward to meeting everyone", time: "3 days ago" }
+    ]
+  }
+];
+
+// Keep MOCK_MATCHES for backwards compatibility but groups are the main feature now
+// User's joined groups
+let USER_GROUPS = [];

@@ -3,7 +3,7 @@
 Progressive Web App für Uni-Projekt erstellt.
 
 ## Was ist SceneLink?
-Eine Bumble-inspirierte Dating-App für Events. User swipen durch Events (interessiert/nicht interessiert) und matchen mit anderen Leuten, die an den gleichen Events interessiert sind.
+Eine Bumble-inspirierte App für Events. User swipen durch Events (interessiert/nicht interessiert) und werden automatisch in kleine Gruppen (5-10 Leute) gepackt, die gemeinsam zu Events gehen wollen.
 
 ## Tech Stack
 - Vanilla HTML/CSS/JavaScript (kein Build-Tool nötig)
@@ -11,12 +11,20 @@ Eine Bumble-inspirierte Dating-App für Events. User swipen durch Events (intere
 - Bumble-inspiriertes Design in Dunkelgrün (#1a4d2e)
 
 ## Features
-- Event Swipe Interface (Touch/Mouse)
-- Match System mit Animations
-- Profile View mit Interessen
-- Matches/Chat Overview
-- Responsive Design
-- Service Worker für Offline-Funktionalität
+- **Event Swipe Interface** (Touch/Mouse)
+- **Erweitertes Onboarding:**
+  - Profil erstellen (Name, Alter, Bio)
+  - Newcomer-Frage
+  - Interessen auswählen
+  - Match-Präferenzen (Altersrange, Personentyp, Vibe, Gruppengröße)
+- **Gruppen-System:**
+  - Automatisches Matching in kleine Gruppen (5-10 Personen)
+  - Gruppen basierend auf gemeinsamen Event-Interessen
+  - Gruppen-Chat statt Einzel-Chat
+  - Gruppen-Info mit allen Mitgliedern
+- **Profile View** mit Interessen und Statistiken
+- **Responsive Design**
+- **Service Worker** für Offline-Funktionalität
 
 ## Quick Start
 ```bash
