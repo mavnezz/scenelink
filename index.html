@@ -51,7 +51,7 @@
             <!-- Step 3: Newcomer Question -->
             <div id="onboardingNewcomer" class="onboarding-screen">
                 <div class="onboarding-content">
-                    <h2>Welcome to Bonn!</h2>
+                    <h2>Welcome to Köln!</h2>
                     <p class="onboarding-text">Are you new to the city?</p>
                     <div class="onboarding-options">
                         <button class="option-btn" onclick="setNewcomer(true)">
@@ -83,7 +83,7 @@
             <div id="onboardingMatchPrefs" class="onboarding-screen">
                 <div class="onboarding-content">
                     <h2>Who do you want to meet?</h2>
-                    <p class="onboarding-text">Help us find the right groups for you</p>
+                    <p class="onboarding-text">Help us find the right matches for you</p>
 
                     <div class="pref-section">
                         <h3>Age range</h3>
@@ -136,25 +136,7 @@
                         </div>
                     </div>
 
-                    <div class="pref-section">
-                        <h3>Preferred group size</h3>
-                        <div class="pref-options" id="groupSizeOptions">
-                            <button class="pref-btn" data-value="small">
-                                <span class="pref-icon">👥</span>
-                                <span>Small (3-5)</span>
-                            </button>
-                            <button class="pref-btn selected" data-value="medium">
-                                <span class="pref-icon">👨‍👩‍👧‍👦</span>
-                                <span>Medium (5-8)</span>
-                            </button>
-                            <button class="pref-btn" data-value="large">
-                                <span class="pref-icon">🎭</span>
-                                <span>Large (8-10)</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <button class="btn-primary" onclick="completeOnboarding()">Find my groups!</button>
+                    <button class="btn-primary" onclick="completeOnboarding()">Find my matches!</button>
                 </div>
             </div>
         </div>
@@ -222,51 +204,25 @@
                 </div>
 
                 <div id="matchesView" class="view">
-                    <h2 class="view-title">Your Groups</h2>
-                    <div class="tabs">
-                        <button class="tab active" data-tab="all">All <span class="tab-count">0</span></button>
-                        <button class="tab" data-tab="new">New <span class="tab-count">0</span></button>
-                        <button class="tab" data-tab="upcoming">Soon <span class="tab-count">0</span></button>
-                    </div>
-                    <div id="groupsList" class="groups-list"></div>
+                    <h2 class="view-title">Your Matches</h2>
+                    <div id="matchesList" class="matches-list"></div>
                 </div>
 
                 <div id="chatView" class="view">
                     <div class="chat-header">
                         <button class="back-btn" onclick="closeChat()">←</button>
-                        <div class="chat-group-info">
-                            <div class="chat-group-avatars" id="chatGroupAvatars"></div>
+                        <div class="chat-user-info">
+                            <img id="chatAvatar" src="" alt="" class="chat-avatar">
                             <div>
-                                <div id="chatGroupName" class="chat-name"></div>
-                                <div id="chatGroupEvent" class="chat-event"></div>
-                                <div id="chatGroupMembers" class="chat-members-count"></div>
+                                <div id="chatName" class="chat-name"></div>
+                                <div id="chatEvent" class="chat-event"></div>
                             </div>
                         </div>
-                        <button class="group-info-btn" onclick="showGroupInfo()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
-                        </button>
                     </div>
                     <div id="chatMessages" class="chat-messages"></div>
                     <div class="chat-input-container">
-                        <input type="text" id="chatInput" placeholder="Write to the group..." class="chat-input">
+                        <input type="text" id="chatInput" placeholder="Write a message..." class="chat-input">
                         <button class="chat-send-btn" onclick="sendMessage()">→</button>
-                    </div>
-                </div>
-
-                <!-- Group Info Modal -->
-                <div id="groupInfoModal" class="modal hidden">
-                    <div class="modal-content">
-                        <button class="modal-close" onclick="closeGroupInfo()">&times;</button>
-                        <h2 id="groupInfoName">Group Name</h2>
-                        <div id="groupInfoEvent" class="group-info-event"></div>
-                        <h3>Members (<span id="groupMemberCount">0</span>)</h3>
-                        <div id="groupMembersList" class="group-members-list"></div>
-                        <h3>Common Interests</h3>
-                        <div id="groupCommonInterests" class="common-interests"></div>
                     </div>
                 </div>
 
@@ -277,7 +233,7 @@
                         </div>
                         <h2 class="profile-name" id="profileName">Max, 24</h2>
                         <p class="profile-bio" id="profileBio">Event Enthusiast</p>
-                        <div id="newcomerBadge" class="newcomer-badge hidden">✈️ New in Bonn</div>
+                        <div id="newcomerBadge" class="newcomer-badge hidden">✈️ New in Köln</div>
                     </div>
                     <div class="profile-section">
                         <h3>My Interests</h3>
@@ -297,7 +253,7 @@
                             </div>
                             <div class="stat-item">
                                 <div class="stat-number" id="statMatches">0</div>
-                                <div class="stat-label">Groups</div>
+                                <div class="stat-label">Matches</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-number" id="statInterests">0</div>
@@ -338,18 +294,19 @@
                     </div>
                 </div>
 
-                <div id="groupNotification" class="match-notification hidden">
+                <div id="matchNotification" class="match-notification hidden">
                     <div class="match-content">
                         <div class="match-icon">🎉</div>
-                        <h2>You joined a group!</h2>
-                        <div class="group-preview">
-                            <div class="group-avatars-row" id="groupAvatarsPreview"></div>
-                            <p class="group-name-preview" id="groupNamePreview"></p>
+                        <h2>It's a Match!</h2>
+                        <div class="match-users">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="You" class="match-avatar">
+                            <span class="match-heart">❤️</span>
+                            <img id="matchedUserAvatar" src="" alt="Match" class="match-avatar">
                         </div>
-                        <p class="match-text"><span id="groupMembersPreview"></span> people are going to</p>
-                        <p class="group-event-preview" id="groupEventPreview"></p>
-                        <div id="commonInterestsGroup" class="common-interests"></div>
-                        <button class="btn-primary" id="openGroupChatBtn">Open Group Chat</button>
+                        <p class="match-text">You and <span id="matchedUserName"></span> both want to go to</p>
+                        <p class="match-event" id="matchedEvent"></p>
+                        <div id="commonInterests" class="common-interests"></div>
+                        <button class="btn-primary" id="openChatBtn">Open Chat</button>
                         <button class="btn-secondary" id="keepSwipingBtn">Keep Swiping</button>
                     </div>
                 </div>
@@ -384,12 +341,9 @@
                 </button>
                 <button class="nav-item" data-view="matchesView">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
-                    <span>Groups</span>
+                    <span>Matches</span>
                 </button>
                 <button class="nav-item" data-view="profileView">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

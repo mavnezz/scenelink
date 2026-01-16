@@ -1,4 +1,4 @@
-// SceneLink App Logic - Extended Version with Groups
+// SceneLink App Logic - Extended Version with 1-on-1 Matching
 
 // State Management
 let currentEventIndex = 0;
@@ -13,8 +13,7 @@ let activeFilters = {
   free: false
 };
 let currentChat = null;
-let currentGroup = null;
-let userGroups = [...MOCK_GROUPS.slice(0, 3)]; // User starts with 3 groups for demo
+let userMatches = [...MOCK_MATCHES]; // User's matches
 
 // Initialize App
 function init() {
@@ -127,7 +126,7 @@ function skipInterests() {
 
 function setupPrefButtons() {
   // Setup preference button click handlers
-  const prefContainers = ['peopleTypeOptions', 'vibeOptions', 'groupSizeOptions'];
+  const prefContainers = ['peopleTypeOptions', 'vibeOptions'];
 
   prefContainers.forEach(containerId => {
     const container = document.getElementById(containerId);
@@ -150,14 +149,12 @@ function saveMatchPreferences() {
 
   const peopleType = document.querySelector('#peopleTypeOptions .pref-btn.selected')?.dataset.value || 'open';
   const vibe = document.querySelector('#vibeOptions .pref-btn.selected')?.dataset.value || 'chill';
-  const groupSize = document.querySelector('#groupSizeOptions .pref-btn.selected')?.dataset.value || 'medium';
 
   CURRENT_USER.matchPreferences = {
     ageMin: Math.min(ageMin, ageMax),
     ageMax: Math.max(ageMin, ageMax),
     peopleType,
-    vibe,
-    groupSize
+    vibe
   };
 }
 
@@ -196,7 +193,7 @@ function initMainApp() {
 
   renderCategoryPills();
   renderEventCards();
-  loadGroups();
+  loadMatches();
   loadProfile();
 
   // Button listeners
@@ -220,21 +217,21 @@ function initMainApp() {
     });
   }
 
-  // Group notification listeners
+  // Match notification listeners
   const keepSwipingBtn = document.getElementById('keepSwipingBtn');
-  const openGroupChatBtn = document.getElementById('openGroupChatBtn');
+  const openChatBtn = document.getElementById('openChatBtn');
 
   if (keepSwipingBtn) {
     keepSwipingBtn.addEventListener('click', () => {
-      document.getElementById('groupNotification').classList.add('hidden');
+      document.getElementById('matchNotification').classList.add('hidden');
     });
   }
 
-  if (openGroupChatBtn) {
-    openGroupChatBtn.addEventListener('click', () => {
-      document.getElementById('groupNotification').classList.add('hidden');
-      if (userGroups.length > 0) {
-        openGroupChat(userGroups[0]);
+  if (openChatBtn) {
+    openChatBtn.addEventListener('click', () => {
+      document.getElementById('matchNotification').classList.add('hidden');
+      if (userMatches.length > 0) {
+        openChat(userMatches[0]);
       }
     });
   }
@@ -259,15 +256,6 @@ function initMainApp() {
 
   // Navigation
   setupNavigation();
-
-  // Tabs in Groups View
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      loadGroups(tab.dataset.tab);
-    });
-  });
 
   console.log('Main app initialized successfully');
 }
@@ -300,7 +288,7 @@ function setupNavigation() {
       }
 
       if (targetView === 'matchesView') {
-        loadGroups();
+        loadMatches();
       } else if (targetView === 'profileView') {
         loadProfile();
       } else if (targetView === 'mapView') {
@@ -545,10 +533,10 @@ function handleSwipe(action) {
     userLikes.push(currentEvent.id);
     card.classList.add('removing', 'like');
 
-    // Check for interest match and random chance (50%) to join a group
+    // Check for interest match and random chance (50%) to get a match
     const hasCommonInterests = currentEvent.interests.some(i => CURRENT_USER.interests.includes(i));
     if (hasCommonInterests && Math.random() < 0.5) {
-      setTimeout(() => showGroupNotification(currentEvent), 500);
+      setTimeout(() => showMatchNotification(currentEvent), 500);
     }
   } else {
     userDislikes.push(currentEvent.id);
@@ -561,76 +549,41 @@ function handleSwipe(action) {
   }, 500);
 }
 
-// Show Group Notification - User joins a group for this event
-function showGroupNotification(event) {
-  // Find existing group for this event or create new one
-  let group = MOCK_GROUPS.find(g => g.event.id === event.id);
+// Show Match Notification - 1-on-1 match with another user
+function showMatchNotification(event) {
+  // Pick a random user for the match
+  const randomUser = MOCK_USERS[Math.floor(Math.random() * MOCK_USERS.length)];
 
-  if (!group) {
-    // Create a new group with random members
-    const shuffledUsers = [...MOCK_USERS].sort(() => Math.random() - 0.5);
-    const groupSize = Math.floor(Math.random() * 4) + 4; // 4-7 members
-    const members = shuffledUsers.slice(0, groupSize);
+  // Find common interests
+  const commonInterests = event.interests.filter(i => CURRENT_USER.interests.includes(i));
 
-    group = {
-      id: Date.now(),
-      name: generateGroupName(event),
-      event: event,
-      members: members,
-      createdAt: new Date().toISOString(),
-      isNew: true,
-      commonInterests: event.interests,
-      messages: [
-        { userId: members[0].id, text: `Excited for ${event.title}!`, time: 'Just now' }
-      ]
-    };
-    MOCK_GROUPS.unshift(group);
-  }
+  // Create new match
+  const newMatch = {
+    id: Date.now(),
+    user: randomUser,
+    event: event,
+    matchDate: new Date().toISOString(),
+    isNew: true,
+    lastMessage: `Hey! Excited for ${event.title}?`,
+    messageTime: 'Just now',
+    commonInterests: commonInterests
+  };
 
-  // Add to user's groups
-  if (!userGroups.find(g => g.id === group.id)) {
-    group.isNew = true;
-    userGroups.unshift(group);
-  }
+  // Add to user's matches
+  userMatches.unshift(newMatch);
 
   // Show notification
-  const avatarsHtml = group.members.slice(0, 5).map(m =>
-    `<img src="${m.avatar}" alt="${m.name}">`
-  ).join('');
+  document.getElementById('matchedUserAvatar').src = randomUser.avatar;
+  document.getElementById('matchedUserName').textContent = randomUser.name;
+  document.getElementById('matchedEvent').textContent = event.title;
 
-  document.getElementById('groupAvatarsPreview').innerHTML = avatarsHtml;
-  document.getElementById('groupNamePreview').textContent = group.name;
-  document.getElementById('groupMembersPreview').textContent = group.members.length;
-  document.getElementById('groupEventPreview').textContent = event.title;
-
-  const commonInterestsHtml = group.commonInterests.map(id => {
+  const commonInterestsHtml = commonInterests.map(id => {
     const interest = AVAILABLE_INTERESTS.find(i => i.id === id);
     return interest ? `<span class="common-interest-tag">${interest.icon} ${interest.name}</span>` : '';
   }).join('');
 
-  document.getElementById('commonInterestsGroup').innerHTML = commonInterestsHtml;
-  document.getElementById('groupNotification').classList.remove('hidden');
-}
-
-// Generate a fun group name based on event
-function generateGroupName(event) {
-  const prefixes = ['The', 'Team', 'Squad', 'Crew', 'Gang'];
-  const suffixes = {
-    'konzert': ['Music Lovers', 'Sound Seekers', 'Melody Makers'],
-    'kunst': ['Art Explorers', 'Creative Minds', 'Culture Club'],
-    'sport': ['Active Squad', 'Fitness Crew', 'Movement Gang'],
-    'food': ['Foodies United', 'Taste Hunters', 'Flavor Squad'],
-    'party': ['Party People', 'Night Owls', 'Vibe Tribe'],
-    'workshop': ['Learners Club', 'Skill Builders', 'Workshop Warriors'],
-    'outdoor': ['Nature Lovers', 'Adventure Crew', 'Outdoor Gang'],
-    'community': ['Community Crew', 'Social Squad', 'Together Team']
-  };
-
-  const categoryOptions = suffixes[event.category] || ['Event Crew', 'Fun Group', 'Adventure Squad'];
-  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-  const suffix = categoryOptions[Math.floor(Math.random() * categoryOptions.length)];
-
-  return `${prefix} ${suffix}`;
+  document.getElementById('commonInterests').innerHTML = commonInterestsHtml;
+  document.getElementById('matchNotification').classList.remove('hidden');
 }
 
 // Show Event Detail Modal
@@ -674,108 +627,59 @@ function showEventDetail(event) {
   document.getElementById('eventModal').classList.remove('hidden');
 }
 
-// Load Groups
-function loadGroups(filter = 'all') {
-  const groupsList = document.getElementById('groupsList');
-  if (!groupsList) return;
+// Load Matches
+function loadMatches() {
+  const matchesList = document.getElementById('matchesList');
+  if (!matchesList) return;
 
-  groupsList.innerHTML = '';
+  matchesList.innerHTML = '';
 
-  let filteredGroups = userGroups;
+  userMatches.forEach(match => {
+    const matchCard = document.createElement('div');
+    matchCard.className = 'match-card' + (match.isNew ? ' new' : '');
 
-  if (filter === 'new') {
-    filteredGroups = userGroups.filter(g => g.isNew);
-  } else if (filter === 'upcoming') {
-    const today = new Date();
-    filteredGroups = userGroups.filter(g => new Date(g.event.date) > today);
-  }
-
-  // Update tab counts
-  const tabCounts = document.querySelectorAll('.tab-count');
-  if (tabCounts[0]) tabCounts[0].textContent = userGroups.length;
-  if (tabCounts[1]) tabCounts[1].textContent = userGroups.filter(g => g.isNew).length;
-  if (tabCounts[2]) tabCounts[2].textContent = userGroups.filter(g => new Date(g.event.date) > new Date()).length;
-
-  filteredGroups.forEach(group => {
-    const groupCard = document.createElement('div');
-    groupCard.className = 'group-card' + (group.isNew ? ' new' : '');
-
-    // Generate avatar stack HTML
-    const avatarsHtml = group.members.slice(0, 3).map(m =>
-      `<img src="${m.avatar}" alt="${m.name}">`
-    ).join('');
-
-    const moreCount = group.members.length > 3 ? group.members.length - 3 : 0;
-    const moreHtml = moreCount > 0 ? `<span class="more-members">+${moreCount}</span>` : '';
-
-    // Get last message
-    const lastMsg = group.messages[group.messages.length - 1];
-    const lastMsgUser = MOCK_USERS.find(u => u.id === lastMsg?.userId);
-
-    groupCard.innerHTML = `
-      <div class="group-header">
-        <div class="group-avatars">
-          ${avatarsHtml}
-          ${moreHtml}
-        </div>
-        <div class="group-info">
-          <div class="group-name">${group.name}</div>
-          <div class="group-event">📍 ${group.event.title}</div>
-          <div class="group-members-count">👥 ${group.members.length} members</div>
-        </div>
+    matchCard.innerHTML = `
+      <img src="${match.user.avatar}" alt="${match.user.name}" class="match-avatar">
+      <div class="match-info">
+        <div class="match-name">${match.user.name}, ${match.user.age}</div>
+        <div class="match-event">📍 ${match.event.title}</div>
+        <div class="match-message">${match.lastMessage}</div>
+        <div class="match-time">${match.messageTime}</div>
       </div>
-      ${lastMsg ? `
-        <div class="group-last-message">
-          <div class="group-message-preview">
-            <span class="group-message-author">${lastMsgUser?.name || 'Someone'}:</span>
-            <span>${lastMsg.text}</span>
-          </div>
-          <div class="group-message-time">${lastMsg.time}</div>
-        </div>
-      ` : ''}
+      ${match.isNew ? '<span class="new-badge">NEW</span>' : ''}
     `;
 
-    groupCard.addEventListener('click', () => openGroupChat(group));
-    groupsList.appendChild(groupCard);
+    matchCard.addEventListener('click', () => openChat(match));
+    matchesList.appendChild(matchCard);
   });
 
-  if (filteredGroups.length === 0) {
-    groupsList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No groups yet. Swipe right on events to join groups!</p>';
+  if (userMatches.length === 0) {
+    matchesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No matches yet. Swipe right on events to find people!</p>';
   }
 }
 
-// Group Chat Functions
-function openGroupChat(group) {
-  currentGroup = group;
-  group.isNew = false; // Mark as seen
+// Chat Functions
+function openChat(match) {
+  currentChat = match;
+  match.isNew = false; // Mark as seen
 
   // Update chat header
-  const avatarsHtml = group.members.slice(0, 3).map(m =>
-    `<img src="${m.avatar}" alt="${m.name}">`
-  ).join('');
+  document.getElementById('chatAvatar').src = match.user.avatar;
+  document.getElementById('chatName').textContent = `${match.user.name}, ${match.user.age}`;
+  document.getElementById('chatEvent').textContent = match.event.title;
 
-  document.getElementById('chatGroupAvatars').innerHTML = avatarsHtml;
-  document.getElementById('chatGroupName').textContent = group.name;
-  document.getElementById('chatGroupEvent').textContent = group.event.title;
-  document.getElementById('chatGroupMembers').textContent = `${group.members.length} members`;
-
-  // Load chat messages
+  // Load chat messages (demo messages)
   const messagesContainer = document.getElementById('chatMessages');
   messagesContainer.innerHTML = '';
 
-  group.messages.forEach(msg => {
-    const sender = MOCK_USERS.find(u => u.id === msg.userId);
-    const isCurrentUser = msg.userId === CURRENT_USER.id;
-
-    const messageEl = document.createElement('div');
-    messageEl.className = `chat-message ${isCurrentUser ? 'sent' : 'received'}`;
-    messageEl.innerHTML = `
-      ${!isCurrentUser ? `<div class="chat-sender">${sender?.name || 'Unknown'}</div>` : ''}
-      <div>${msg.text}</div>
-      <div class="chat-time">${msg.time}</div>
-    `;
-    messagesContainer.appendChild(messageEl);
-  });
+  // Add demo received message
+  const receivedMsg = document.createElement('div');
+  receivedMsg.className = 'chat-message received';
+  receivedMsg.innerHTML = `
+    <div>${match.lastMessage}</div>
+    <div class="chat-time">${match.messageTime}</div>
+  `;
+  messagesContainer.appendChild(receivedMsg);
 
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
@@ -787,22 +691,14 @@ function openGroupChat(group) {
 function closeChat() {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('matchesView').classList.add('active');
-  loadGroups(); // Refresh groups to update "new" badges
+  loadMatches(); // Refresh matches to update "new" badges
 }
 
 function sendMessage() {
   const input = document.getElementById('chatInput');
   const message = input.value.trim();
 
-  if (!message || !currentGroup) return;
-
-  // Add message to group
-  const newMsg = {
-    userId: CURRENT_USER.id,
-    text: message,
-    time: 'Just now'
-  };
-  currentGroup.messages.push(newMsg);
+  if (!message || !currentChat) return;
 
   // Add to UI
   const messagesContainer = document.getElementById('chatMessages');
@@ -820,14 +716,13 @@ function sendMessage() {
 
   // Simulate a reply after 2 seconds (for demo)
   setTimeout(() => {
-    simulateGroupReply();
+    simulateReply();
   }, 2000);
 }
 
-function simulateGroupReply() {
-  if (!currentGroup) return;
+function simulateReply() {
+  if (!currentChat) return;
 
-  const randomMember = currentGroup.members[Math.floor(Math.random() * currentGroup.members.length)];
   const replies = [
     "Sounds great! 🎉",
     "Can't wait!",
@@ -838,62 +733,16 @@ function simulateGroupReply() {
   ];
   const randomReply = replies[Math.floor(Math.random() * replies.length)];
 
-  const newMsg = {
-    userId: randomMember.id,
-    text: randomReply,
-    time: 'Just now'
-  };
-  currentGroup.messages.push(newMsg);
-
   const messagesContainer = document.getElementById('chatMessages');
   const messageEl = document.createElement('div');
   messageEl.className = 'chat-message received';
   messageEl.innerHTML = `
-    <div class="chat-sender">${randomMember.name}</div>
     <div>${randomReply}</div>
     <div class="chat-time">Just now</div>
   `;
 
   messagesContainer.appendChild(messageEl);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-// Group Info Modal
-function showGroupInfo() {
-  if (!currentGroup) return;
-
-  document.getElementById('groupInfoName').textContent = currentGroup.name;
-  document.getElementById('groupInfoEvent').innerHTML = `
-    📍 ${currentGroup.event.title}<br>
-    📅 ${formatDate(currentGroup.event.date)} • ${currentGroup.event.time}<br>
-    📍 ${currentGroup.event.location}
-  `;
-  document.getElementById('groupMemberCount').textContent = currentGroup.members.length;
-
-  // Render members list
-  const membersList = document.getElementById('groupMembersList');
-  membersList.innerHTML = currentGroup.members.map(member => `
-    <div class="member-item">
-      <img src="${member.avatar}" alt="${member.name}" class="member-avatar">
-      <div class="member-info">
-        <div class="member-name">${member.name}, ${member.age}</div>
-        <div class="member-bio">${member.bio}</div>
-      </div>
-    </div>
-  `).join('');
-
-  // Render common interests
-  const commonInterestsHtml = currentGroup.commonInterests.map(id => {
-    const interest = AVAILABLE_INTERESTS.find(i => i.id === id);
-    return interest ? `<span class="common-interest-tag">${interest.icon} ${interest.name}</span>` : '';
-  }).join('');
-  document.getElementById('groupCommonInterests').innerHTML = commonInterestsHtml;
-
-  document.getElementById('groupInfoModal').classList.remove('hidden');
-}
-
-function closeGroupInfo() {
-  document.getElementById('groupInfoModal').classList.add('hidden');
 }
 
 // Map View
@@ -961,7 +810,7 @@ function loadProfile() {
 
   // Update stats
   if (statEvents) statEvents.textContent = userLikes.length;
-  if (statMatches) statMatches.textContent = userGroups.length; // Now shows groups instead of matches
+  if (statMatches) statMatches.textContent = userMatches.length;
   if (statInterests) statInterests.textContent = CURRENT_USER.interests.length;
 
   console.log('Profile loaded successfully');

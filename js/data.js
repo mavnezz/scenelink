@@ -41,7 +41,7 @@ const MOCK_EVENTS = [
     date: "2026-01-15",
     time: "20:00",
     location: "Blue Note Club",
-    city: "Bonn",
+    city: "Köln",
     distance: "2 km",
     lat: 52.5200,
     lng: 13.4050,
@@ -64,7 +64,7 @@ const MOCK_EVENTS = [
     date: "2026-01-18",
     time: "14:00",
     location: "Urban Art Space",
-    city: "Bonn",
+    city: "Köln",
     distance: "1.5 km",
     lat: 52.5100,
     lng: 13.4150,
@@ -86,7 +86,7 @@ const MOCK_EVENTS = [
     date: "2026-01-20",
     time: "07:00",
     location: "SkyHigh Yoga Studio",
-    city: "Bonn",
+    city: "Köln",
     distance: "3 km",
     lat: 52.5250,
     lng: 13.3900,
@@ -109,7 +109,7 @@ const MOCK_EVENTS = [
     date: "2026-01-22",
     time: "12:00",
     location: "Markthalle Neun",
-    city: "Bonn",
+    city: "Köln",
     distance: "4 km",
     lat: 52.4950,
     lng: 13.4250,
@@ -130,8 +130,8 @@ const MOCK_EVENTS = [
     category: "konzert",
     date: "2026-01-25",
     time: "21:00",
-    location: "Lido Bonn",
-    city: "Bonn",
+    location: "Lido Köln",
+    city: "Köln",
     distance: "2.8 km",
     lat: 52.5150,
     lng: 13.4100,
@@ -154,14 +154,14 @@ const MOCK_EVENTS = [
     date: "2026-01-28",
     time: "10:00",
     location: "Treffpunkt: Alexanderplatz",
-    city: "Bonn",
+    city: "Köln",
     distance: "1 km",
     lat: 52.5219,
     lng: 13.4132,
     image: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800&h=1000&fit=crop",
     attendees: 18,
     goingSolo: 9,
-    description: "Entdecke die Stadt durch deine Linse. Gemeinsamer Fotospaziergang durch die interessantesten Viertel Bonns.",
+    description: "Entdecke die Stadt durch deine Linse. Gemeinsamer Fotospaziergang durch die interessantesten Viertel Kölns.",
     price: "Kostenlos",
     tags: ["Photography", "Outdoor", "Creative"],
     interests: ["fotografie", "outdoor"],
@@ -176,7 +176,7 @@ const MOCK_EVENTS = [
     date: "2026-02-01",
     time: "16:00",
     location: "Tempelhofer Feld",
-    city: "Bonn",
+    city: "Köln",
     distance: "5 km",
     lat: 52.4730,
     lng: 13.4050,
@@ -199,7 +199,7 @@ const MOCK_EVENTS = [
     date: "2026-02-05",
     time: "18:30",
     location: "Café Literatour",
-    city: "Bonn",
+    city: "Köln",
     distance: "2.2 km",
     lat: 52.5080,
     lng: 13.4020,
@@ -221,7 +221,7 @@ const MOCK_EVENTS = [
     date: "2026-01-19",
     time: "17:00",
     location: "Green Kitchen Studio",
-    city: "Bonn",
+    city: "Köln",
     distance: "2.5 km",
     lat: 52.5180,
     lng: 13.3980,
@@ -245,7 +245,7 @@ const MOCK_EVENTS = [
     date: "2026-01-23",
     time: "14:00",
     location: "Community Hall Kreuzberg",
-    city: "Bonn",
+    city: "Köln",
     distance: "3.2 km",
     lat: 52.4990,
     lng: 13.4150,
@@ -269,7 +269,7 @@ const MOCK_EVENTS = [
     date: "2026-01-26",
     time: "10:00",
     location: "Prinzessinnengarten",
-    city: "Bonn",
+    city: "Köln",
     distance: "3.8 km",
     lat: 52.5070,
     lng: 13.4110,
@@ -292,15 +292,15 @@ const MOCK_EVENTS = [
     category: "community",
     date: "2026-01-21",
     time: "19:00",
-    location: "Bonn Welcome Center",
-    city: "Bonn",
+    location: "Köln Welcome Center",
+    city: "Köln",
     distance: "1.8 km",
     lat: 52.5230,
     lng: 13.4070,
     image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&h=1000&fit=crop",
     attendees: 65,
     goingSolo: 42,
-    description: "Neu in Bonn? Triff andere Newcomer und Locals die dir die Stadt zeigen! Mit Drinks, Snacks und Speed-Networking zum Leute kennenlernen.",
+    description: "Neu in Köln? Triff andere Newcomer und Locals die dir die Stadt zeigen! Mit Drinks, Snacks und Speed-Networking zum Leute kennenlernen.",
     price: "Kostenlos",
     tags: ["Networking", "Newcomers", "Community"],
     interests: ["networking"],
@@ -491,96 +491,6 @@ let CURRENT_USER = {
     ageMin: 18,
     ageMax: 35,
     peopleType: 'open', // 'open', 'newcomers', 'locals'
-    vibe: 'chill', // 'chill', 'active', 'party'
-    groupSize: 'medium' // 'small' (3-5), 'medium' (5-8), 'large' (8-10)
+    vibe: 'chill' // 'chill', 'active', 'party'
   }
 };
-
-// Mock Groups Data - Groups of people going to the same events
-const MOCK_GROUPS = [
-  {
-    id: 1,
-    name: "Jazz Lovers",
-    event: MOCK_EVENTS[0], // Summer Jazz Night
-    members: [MOCK_USERS[0], MOCK_USERS[3], MOCK_USERS[5], MOCK_USERS[6]],
-    createdAt: "2024-06-10",
-    isNew: true,
-    commonInterests: ["musik", "konzerte"],
-    messages: [
-      { userId: 1, text: "Hey everyone! Excited for the jazz night?", time: "2 hours ago" },
-      { userId: 4, text: "Can't wait! Anyone been to Blue Note before?", time: "1 hour ago" },
-      { userId: 6, text: "Yes! The vibe is amazing there", time: "30 min ago" }
-    ]
-  },
-  {
-    id: 2,
-    name: "Yoga Crew",
-    event: MOCK_EVENTS[2], // Rooftop Yoga Session
-    members: [MOCK_USERS[1], MOCK_USERS[4], MOCK_USERS[7]],
-    createdAt: "2024-06-09",
-    isNew: true,
-    commonInterests: ["yoga", "sport", "outdoor"],
-    messages: [
-      { userId: 2, text: "Who's bringing their own mat?", time: "5 hours ago" },
-      { userId: 5, text: "I will! The sunrise is going to be beautiful", time: "4 hours ago" }
-    ]
-  },
-  {
-    id: 3,
-    name: "Techno Squad",
-    event: MOCK_EVENTS[6], // Techno Open Air
-    members: [MOCK_USERS[2], MOCK_USERS[0], MOCK_USERS[5], MOCK_USERS[1], MOCK_USERS[3]],
-    createdAt: "2024-06-08",
-    isNew: false,
-    commonInterests: ["party", "techno", "musik"],
-    messages: [
-      { userId: 3, text: "The lineup is insane!", time: "Yesterday" },
-      { userId: 1, text: "Should we meet at the entrance?", time: "Yesterday" },
-      { userId: 6, text: "Let's do 4pm at the main gate!", time: "Yesterday" }
-    ]
-  },
-  {
-    id: 4,
-    name: "Foodies United",
-    event: MOCK_EVENTS[3], // Food Market Festival
-    members: [MOCK_USERS[7], MOCK_USERS[0], MOCK_USERS[4], MOCK_USERS[2], MOCK_USERS[6], MOCK_USERS[3]],
-    createdAt: "2024-06-07",
-    isNew: false,
-    commonInterests: ["food"],
-    messages: [
-      { userId: 8, text: "I heard the Asian stalls are amazing", time: "2 days ago" },
-      { userId: 1, text: "Can't wait to try everything!", time: "2 days ago" }
-    ]
-  },
-  {
-    id: 5,
-    name: "Art Explorers",
-    event: MOCK_EVENTS[1], // Street Art Workshop
-    members: [MOCK_USERS[6], MOCK_USERS[0], MOCK_USERS[3]],
-    createdAt: "2024-06-06",
-    isNew: false,
-    commonInterests: ["kunst", "workshops"],
-    messages: [
-      { userId: 7, text: "Anyone have experience with graffiti?", time: "3 days ago" },
-      { userId: 4, text: "First time for me, excited to learn!", time: "3 days ago" }
-    ]
-  },
-  {
-    id: 6,
-    name: "Newcomers Meetup Group",
-    event: MOCK_EVENTS[11], // Newcomers Welcome Meetup
-    members: [MOCK_USERS[0], MOCK_USERS[3], MOCK_USERS[6], MOCK_USERS[1], MOCK_USERS[4]],
-    createdAt: "2024-06-05",
-    isNew: false,
-    commonInterests: ["networking"],
-    messages: [
-      { userId: 1, text: "Perfect event to meet new people!", time: "4 days ago" },
-      { userId: 4, text: "I'm new from Düsseldorf, where is everyone from?", time: "4 days ago" },
-      { userId: 7, text: "Cologne here! Looking forward to meeting everyone", time: "3 days ago" }
-    ]
-  }
-];
-
-// Keep MOCK_MATCHES for backwards compatibility but groups are the main feature now
-// User's joined groups
-let USER_GROUPS = [];
