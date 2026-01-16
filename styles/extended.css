@@ -910,3 +910,31 @@
     font-size: 0.9rem;
   }
 }
+
+/* Logo Styles */
+.onboarding-logo-img {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1rem;
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-logo {
+  width: 32px;
+  height: 32px;
+}

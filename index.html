@@ -8,8 +8,8 @@
     <title>SceneLink</title>
     <link rel="stylesheet" href="styles/main.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="assets/icon-192.png">
-    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <link rel="apple-touch-icon" href="assets/logo.svg">
 </head>
 <body>
     <div id="app">
@@ -18,9 +18,9 @@
             <!-- Step 1: Welcome -->
             <div id="onboardingWelcome" class="onboarding-screen active">
                 <div class="onboarding-content">
+                    <img src="assets/logo.svg" alt="SceneLink" class="onboarding-logo-img">
                     <h1 class="onboarding-logo">SceneLink</h1>
                     <p class="onboarding-subtitle">Discover Events.<br>Find Like-Minded People.<br>Experience Your City!</p>
-                    <div class="onboarding-illustration">🎉</div>
                     <button class="btn-primary" onclick="nextOnboardingStep()">Let's Go!</button>
                 </div>
             </div>
@@ -162,7 +162,10 @@
         <!-- Main App -->
         <div id="mainApp" class="hidden">
             <header class="app-header">
-                <h1 class="logo">SceneLink</h1>
+                <div class="logo-container">
+                    <img src="assets/logo.svg" alt="SceneLink" class="header-logo">
+                    <h1 class="logo">SceneLink</h1>
+                </div>
                 <div class="header-icons">
                     <button class="icon-btn" id="filterBtn" title="Filter">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
